@@ -11,6 +11,102 @@ function isSaveLocalEnabled() {
   return getSaveLocalCheck()?.checked ?? false;
 }
 
+function getStoredKey(providerId = provider) {
+  return localStorage.getItem('mermaid_api_key_' + providerId) || '';
+}
+
+function getCurrentProviderKey(providerId = provider) {
+  return sessionApiKeys[providerId] || (isSaveLocalEnabled() ? getStoredKey(providerId) : '') || '';
+}
+
+function maskApiKey(value) {
+  if (!value) return '';
+  if (value.length <= 8) return value.slice(0, 2) + '****';
+  return `${value.slice(0, 6)}****${value.slice(-4)}`;
+}
+
+function hasConfiguredKey(providerId = provider) {
+  return Boolean(getCurrentProviderKey(providerId));
+}
+
+function updateApiKeySummary() {
+  const summary = document.getElementById('apiKeySummary');
+  const editor = document.getElementById('apiKeyEditor');
+  const cancelBtn = document.getElementById('apiKeyCancelBtn');
+  const toggleBtn = document.getElementById('apiKeyToggleBtn');
+  const revealBtn = document.getElementById('apiKeyRevealBtn');
+  const storageBadge = document.getElementById('apiKeyStorageBadge');
+  const summaryTitle = document.getElementById('apiKeySummaryTitle');
+  const summaryText = document.getElementById('apiKeySummaryText');
+  const maskEl = document.getElementById('apiKeyMask');
+  const hasKey = hasConfiguredKey(provider);
+  const key = getCurrentProviderKey(provider);
+  const storedLocally = isSaveLocalEnabled() && Boolean(getStoredKey(provider));
+
+  if (!summary || !editor) return;
+
+  summary.classList.toggle('hidden', !hasKey);
+  editor.classList.toggle('hidden', hasKey && !apiEditorPinnedOpen);
+  cancelBtn?.classList.toggle('hidden', !hasKey || !apiEditorPinnedOpen);
+
+  if (toggleBtn) toggleBtn.textContent = apiEditorPinnedOpen ? '접기' : '보기';
+  if (revealBtn) revealBtn.textContent = apiKeyRevealMode ? '가리기' : '전체 보기';
+  if (storageBadge) storageBadge.textContent = storedLocally ? '브라우저 저장' : '세션';
+  if (summaryTitle) summaryTitle.textContent = provider === 'claude' ? 'Claude API 키 저장됨' : 'OpenAI API 키 저장됨';
+  if (summaryText) {
+    summaryText.textContent = storedLocally
+      ? '이 브라우저의 localStorage에 저장되어 다시 열어도 유지됩니다.'
+      : '현재 세션에만 유지되며 새로고침하면 사라집니다.';
+  }
+  if (maskEl) maskEl.textContent = apiKeyRevealMode ? key : maskApiKey(key);
+}
+
+function openApiKeyEditor(pinOpen = false) {
+  apiEditorPinnedOpen = pinOpen;
+  updateApiKeySummary();
+  const input = document.getElementById('apiKeyInput');
+  if (input && !input.closest('.hidden')) {
+    input.focus();
+    input.setSelectionRange(input.value.length, input.value.length);
+  }
+}
+
+function closeApiKeyEditor() {
+  apiEditorPinnedOpen = false;
+  apiKeyRevealMode = false;
+  updateApiKeySummary();
+}
+
+function toggleApiKeyEditor() {
+  apiEditorPinnedOpen = !apiEditorPinnedOpen;
+  updateApiKeySummary();
+}
+
+function toggleApiKeyReveal() {
+  apiKeyRevealMode = !apiKeyRevealMode;
+  updateApiKeySummary();
+}
+
+function cancelApiKeyEdit() {
+  const currentKey = getCurrentProviderKey(provider);
+  document.getElementById('apiKeyInput').value = currentKey || '';
+  onApiKeyChange();
+  closeApiKeyEditor();
+}
+
+function deleteApiKey() {
+  sessionApiKeys[provider] = '';
+  localStorage.removeItem('mermaid_api_key_' + provider);
+  if (provider === 'openai') localStorage.removeItem('mermaid_openai_model');
+  apiKey = '';
+  apiKeyRevealMode = false;
+  apiEditorPinnedOpen = true;
+  document.getElementById('apiKeyInput').value = '';
+  document.getElementById('inputCard').classList.add('hidden');
+  onApiKeyChange();
+  updateApiKeySummary();
+}
+
 // ── 테마 ──────────────────────────────────
 function applyTheme(mode) {
   const isLight = mode === 'light';
@@ -67,6 +163,12 @@ let apiKey    = '';
 let provider  = 'claude';
 let openaiModel = 'gpt-4o-mini';
 let detailLevel = 'low';
+let apiKeyRevealMode = false;
+let apiEditorPinnedOpen = false;
+const sessionApiKeys = {
+  claude: '',
+  openai: '',
+};
 
 const INPUT_TEMPLATES = {
   process: `목적: 신규 고객 온보딩 프로세스를 시각화
@@ -194,7 +296,7 @@ function saveApiKey() {
 (function initApiSettings() {
   const lastProvider = localStorage.getItem('mermaid_last_provider') || 'claude';
   const savedModel   = localStorage.getItem('mermaid_openai_model');
-  const isSaveEnabled = localStorage.getItem('mermaid_save_local') !== 'false';
+  const isSaveEnabled = localStorage.getItem('mermaid_save_local') === 'true';
   const saveLocalCheck = getSaveLocalCheck();
 
   if (saveLocalCheck) saveLocalCheck.checked = isSaveEnabled;

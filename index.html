@@ -27,30 +27,51 @@
       </div>
       <p class="trust-note-text">이 앱은 브라우저에서 AI API를 직접 호출합니다. 키를 저장하지 않으면 현재 세션에만 유지되고, 저장을 켜면 이 브라우저의 localStorage에 남습니다.</p>
     </div>
-    <div class="provider-btns">
+    <div class="provider-btns" id="providerBtns">
       <button class="provider-btn active" id="providerClaude" onclick="selectProvider('claude')">● Claude (Anthropic)</button>
       <button class="provider-btn" id="providerOpenai" onclick="selectProvider('openai')">● OpenAI</button>
     </div>
-    <div id="openaiModelRow" class="openai-model-row">
-      <label class="openai-model-label">OpenAI 모델 선택</label>
-      <select id="openaiModelSelect" class="openai-model-select">
-        <option value="gpt-4o-mini">gpt-4o-mini — 표준형 · 안정적</option>
-        <option value="gpt-4o">gpt-4o — 고성능 · 최신 엔진</option>
-      </select>
+    <div id="apiKeySummary" class="api-key-summary hidden">
+      <div class="api-key-summary-row">
+        <div>
+          <div class="api-key-summary-title" id="apiKeySummaryTitle">API 키 저장됨</div>
+          <div class="api-key-summary-text" id="apiKeySummaryText">현재 브라우저에서만 사용할 수 있습니다.</div>
+        </div>
+        <span class="api-key-badge" id="apiKeyStorageBadge">세션</span>
+      </div>
+      <div class="api-key-mask" id="apiKeyMask">sk-****</div>
+      <div class="api-key-summary-actions">
+        <button class="summary-btn" type="button" id="apiKeyToggleBtn" onclick="toggleApiKeyEditor()">보기</button>
+        <button class="summary-btn" type="button" id="apiKeyRevealBtn" onclick="toggleApiKeyReveal()">전체 보기</button>
+        <button class="summary-btn" type="button" onclick="openApiKeyEditor(true)">수정</button>
+        <button class="summary-btn summary-btn-danger" type="button" onclick="deleteApiKey()">삭제</button>
+      </div>
     </div>
-    <div class="api-input-row">
-      <input type="password" id="apiKeyInput" class="api-key-input"
-        placeholder="Anthropic API Key를 입력하세요 (sk-ant-...)"
-        oninput="onApiKeyChange()" onkeydown="if(event.key==='Enter')saveApiKey()">
-      <button onclick="saveApiKey()" id="apiKeySaveBtn" class="api-key-save-btn" disabled>
-        저장
-      </button>
+    <div id="apiKeyEditor">
+      <div id="openaiModelRow" class="openai-model-row">
+        <label class="openai-model-label">OpenAI 모델 선택</label>
+        <select id="openaiModelSelect" class="openai-model-select">
+          <option value="gpt-4o-mini">gpt-4o-mini — 표준형 · 안정적</option>
+          <option value="gpt-4o">gpt-4o — 고성능 · 최신 엔진</option>
+        </select>
+      </div>
+      <div class="api-input-row">
+        <input type="password" id="apiKeyInput" class="api-key-input"
+          placeholder="Anthropic API Key를 입력하세요 (sk-ant-...)"
+          oninput="onApiKeyChange()" onkeydown="if(event.key==='Enter')saveApiKey()">
+        <button onclick="saveApiKey()" id="apiKeySaveBtn" class="api-key-save-btn" disabled>
+          저장
+        </button>
+      </div>
+      <div class="editor-actions">
+        <button class="summary-btn hidden" type="button" id="apiKeyCancelBtn" onclick="cancelApiKeyEdit()">취소</button>
+      </div>
+      <label class="save-local-row">
+        <input type="checkbox" id="saveLocalCheck" onchange="onSaveLocalToggle()">
+        브라우저에 API Key 저장
+      </label>
+      <div id="apiKeyStatus" class="api-key-status">API Key는 브라우저 메모리에만 저장되며 외부로 전송되지 않습니다.</div>
     </div>
-    <label class="save-local-row">
-      <input type="checkbox" id="saveLocalCheck" onchange="onSaveLocalToggle()">
-      브라우저에 API Key 저장
-    </label>
-    <div id="apiKeyStatus" class="api-key-status">API Key는 브라우저 메모리에만 저장되며 외부로 전송되지 않습니다.</div>
   </div>
 
   <div class="card hidden" id="inputCard">
