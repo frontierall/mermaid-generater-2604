@@ -68,6 +68,33 @@ let provider  = 'claude';
 let openaiModel = 'gpt-4o-mini';
 let detailLevel = 'low';
 
+const INPUT_TEMPLATES = {
+  process: `목적: 신규 고객 온보딩 프로세스를 시각화
+참여자: 고객, 영업팀, 운영팀
+단계:
+1. 고객이 문의를 남긴다
+2. 영업팀이 요구사항을 확인한다
+3. 운영팀이 계정을 생성한다
+4. 고객이 초기 설정을 완료한다
+5. 운영팀이 활성화 여부를 확인한다`,
+  timeline: `프로젝트: 웹 서비스 개편 일정
+기간: 6주
+주요 일정:
+- 1주차: 요구사항 정리
+- 2주차: 화면 설계
+- 3~4주차: 개발
+- 5주차: QA 및 수정
+- 6주차: 배포 및 운영 점검`,
+  system: `시나리오: 사용자가 로그인하는 과정
+참여 시스템: User, WebApp, Auth API, Database
+흐름:
+1. 사용자가 로그인 요청을 보낸다
+2. WebApp이 Auth API에 인증을 요청한다
+3. Auth API가 Database에서 계정을 조회한다
+4. 인증 성공 시 토큰을 발급한다
+5. WebApp이 사용자에게 로그인 완료를 보여준다`,
+};
+
 // ── 프로바이더 설정 ────────────────────────
 const PROVIDER_CONFIG = {
   claude: {
@@ -345,6 +372,8 @@ function buildTypeGrid(analysis) {
   EXTRA_TYPES.forEach(type => {
     grid.appendChild(makeCard(type, 'extra', type.desc));
   });
+
+  updateRecommendActions(recommended);
 }
 
 // ── 타입 선택 (최대 3개) ──────────────────
@@ -388,6 +417,36 @@ function updateCardSelections() {
   btn.textContent = n > 1
     ? `✨ 다이어그램 ${n}개 동시 생성하기`
     : '✨ 다이어그램 생성하기';
+}
+
+function updateRecommendActions(recommended = analysisResult?.recommended || []) {
+  const box = document.getElementById('recommendActions');
+  if (!box) return;
+  const hasRecommendations = Array.isArray(recommended) && recommended.length > 0;
+  box.classList.toggle('hidden', !hasRecommendations);
+}
+
+function applyRecommendedSelection(count = 1) {
+  const recommended = analysisResult?.recommended || [];
+  if (!recommended.length) return;
+  selectedTypes = recommended
+    .filter(id => MAIN_TYPES.some(type => type.id === id))
+    .slice(0, Math.max(1, Math.min(3, count)));
+  updateCardSelections();
+}
+
+function clearTypeSelection() {
+  selectedTypes = [];
+  updateCardSelections();
+}
+
+function applyInputTemplate(templateId) {
+  const text = INPUT_TEMPLATES[templateId];
+  const input = document.getElementById('inputText');
+  if (!text || !input) return;
+  input.value = text;
+  input.focus();
+  input.setSelectionRange(input.value.length, input.value.length);
 }
 
 // ── 다이어그램 생성 ───────────────────────
@@ -581,7 +640,10 @@ async function generateDiagram() {
         await renderDiagram(result.value, typeId);
       } else {
         const out = document.getElementById('diagramOutput_' + typeId);
-        if (out) out.innerHTML = `<div style="color:#f87171;font-size:0.85rem">생성 실패: ${result.reason?.message || '알 수 없는 오류'}</div>`;
+        if (out) {
+          const errorMessage = escapeHtml(result.reason?.message || '알 수 없는 오류');
+          out.innerHTML = buildDiagramErrorHtml(typeId, `생성 실패: ${errorMessage}`, false);
+        }
       }
     }
 
@@ -640,6 +702,57 @@ function buildResultItems(typeIds) {
   });
 }
 
+function buildDiagramErrorHtml(typeId, message, canRetry = true) {
+  return `
+    <div class="diagram-error-card">
+      <div class="diagram-error-title">미리보기를 만들지 못했습니다</div>
+      <div class="diagram-error-text">${message}</div>
+      <div class="diagram-error-actions">
+        ${canRetry ? `<button class="inline-action-btn inline-action-btn-primary" onclick="retrySingleDiagram('${typeId}')">다시 생성</button>` : ''}
+        <button class="inline-action-btn" onclick="switchResultTab('${typeId}', 'code')">코드 보기</button>
+        <button class="inline-action-btn" onclick="openTypeSelectionFromResult('${typeId}')">다른 유형 선택</button>
+      </div>
+    </div>`;
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+async function retrySingleDiagram(typeId) {
+  const text = document.getElementById('inputText').value.trim();
+  const output = document.getElementById('diagramOutput_' + typeId);
+  if (!text || !output) return;
+
+  output.innerHTML = `<div style="color:var(--text-muted)"><span class="loader"></span> 다시 생성 중...</div>`;
+
+  try {
+    const raw = await callAI([{ role: 'user', content: text }], buildPrompt(typeId, text));
+    const cleaned = raw.trim().replace(/^```[a-z]*\n?|```$/g, '').trim();
+    currentCodes[typeId] = cleaned;
+    const codeEl = document.getElementById('codeText_' + typeId);
+    if (codeEl) codeEl.textContent = cleaned;
+    await renderDiagram(cleaned, typeId);
+  } catch (e) {
+    output.innerHTML = buildDiagramErrorHtml(typeId, `재생성 실패: ${escapeHtml(e.message)}`, true);
+  }
+}
+
+function openTypeSelectionFromResult(typeId) {
+  if (!selectedTypes.includes(typeId)) {
+    if (selectedTypes.length >= 3) selectedTypes = selectedTypes.slice(0, 2);
+    selectedTypes.push(typeId);
+  }
+  updateCardSelections();
+  document.getElementById('typeSection').classList.remove('hidden');
+  document.getElementById('typeSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 // ── 렌더링 (자동 수정 포함) ───────────────
 async function renderDiagram(code, typeId, retryCount = 0) {
   const output = document.getElementById('diagramOutput_' + typeId);
@@ -693,10 +806,10 @@ async function renderDiagram(code, typeId, retryCount = 0) {
         if (codeEl) codeEl.textContent = fixed;
         await renderDiagram(fixed, typeId, retryCount + 1);
       } catch (e2) {
-        output.innerHTML = `<div style="color:#f87171;font-size:0.85rem">자동 수정 실패: ${e2.message}<br><br>코드 탭에서 직접 확인하세요.</div>`;
+        output.innerHTML = buildDiagramErrorHtml(typeId, `자동 수정 실패: ${escapeHtml(e2.message)}`, true);
       }
     } else {
-      output.innerHTML = `<div style="color:#f87171;font-size:0.85rem">렌더링 실패 (2회 시도): ${e.message}<br><br>코드 탭에서 확인하세요.</div>`;
+      output.innerHTML = buildDiagramErrorHtml(typeId, `렌더링 실패 (2회 시도): ${escapeHtml(e.message)}`, true);
     }
   }
 }
@@ -1040,6 +1153,7 @@ function resetAll() {
   document.getElementById('resultsContainer').innerHTML = '';
   document.getElementById('statusMsg').classList.add('hidden');
   document.getElementById('generateBtn').disabled = true;
+  updateRecommendActions([]);
   closeFullscreen();
   document.getElementById('inputText').focus();
 }

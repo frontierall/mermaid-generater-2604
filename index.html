@@ -18,6 +18,15 @@
 
   <div class="card" id="apiKeyCard">
     <div class="section-title">🔑 API KEY 입력</div>
+    <div class="trust-note">
+      <div class="trust-note-title">먼저 확인하세요</div>
+      <div class="trust-points">
+        <div class="trust-pill trust-pill-safe">세션 저장 권장</div>
+        <div class="trust-pill">이 브라우저에서만 유지</div>
+        <div class="trust-pill trust-pill-warn">공용 PC 저장 비권장</div>
+      </div>
+      <p class="trust-note-text">이 앱은 브라우저에서 AI API를 직접 호출합니다. 키를 저장하지 않으면 현재 세션에만 유지되고, 저장을 켜면 이 브라우저의 localStorage에 남습니다.</p>
+    </div>
     <div class="provider-btns">
       <button class="provider-btn active" id="providerClaude" onclick="selectProvider('claude')">● Claude (Anthropic)</button>
       <button class="provider-btn" id="providerOpenai" onclick="selectProvider('openai')">● OpenAI</button>
@@ -53,13 +62,27 @@
         <button id="detailHigh" onclick="setDetailLevel('high')" class="detail-btn">🧠 상세</button>
       </div>
     </div>
-    <textarea id="inputText" placeholder="분석할 내용을 자유롭게 입력하세요..."></textarea>
+    <div class="input-guide">
+      <div class="input-guide-title">입력 품질 가이드</div>
+      <p class="input-guide-text">결과를 잘 뽑으려면 목적, 단계, 참여자, 시간 정보 중 2개 이상을 같이 적는 편이 좋습니다.</p>
+      <div class="prompt-chips">
+        <button class="prompt-chip" type="button" onclick="applyInputTemplate('process')">업무 프로세스 예시</button>
+        <button class="prompt-chip" type="button" onclick="applyInputTemplate('timeline')">프로젝트 일정 예시</button>
+        <button class="prompt-chip" type="button" onclick="applyInputTemplate('system')">시스템 상호작용 예시</button>
+      </div>
+    </div>
+    <textarea id="inputText" placeholder="예: 사용자가 회원가입 후 이메일 인증을 거쳐 로그인하고, 관리자 승인 후 서비스 기능을 사용할 수 있는 흐름을 단계별로 정리해줘."></textarea>
     <button class="analyze-btn" id="analyzeBtn" onclick="analyzeText()">● AI 분석하기</button>
     <div id="analyzeError" class="error hidden"></div>
   </div>
 
   <div class="card hidden" id="typeSection">
     <div class="section-title">② 시각화 유형 선택 <span class="type-section-note">(최대 3개)</span></div>
+    <div class="recommend-actions" id="recommendActions">
+      <button class="recommend-btn recommend-btn-primary" type="button" onclick="applyRecommendedSelection(1)">추천 1개 바로 선택</button>
+      <button class="recommend-btn" type="button" onclick="applyRecommendedSelection(3)">추천 상위 3개 선택</button>
+      <button class="recommend-btn" type="button" onclick="clearTypeSelection()">선택 초기화</button>
+    </div>
     <div class="diagram-grid" id="diagramGrid"></div>
     <div class="select-hint" id="selectHint">유형을 선택하세요 — <span>0 / 3</span> 선택됨</div>
     <button class="generate-btn generate-btn-spaced" id="generateBtn" onclick="generateDiagram()" disabled>
