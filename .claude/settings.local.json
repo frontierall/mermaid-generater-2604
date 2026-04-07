@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:mermaid.js.org)",
+      "Bash(node:*)",
+      "WebFetch(domain:cdnjs.cloudflare.com)",
+      "WebFetch(domain:api.cdnjs.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebSearch"
+    ]
+  }
+}

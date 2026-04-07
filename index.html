@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Mermaid 다이어그램 생성기</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.12.0/mermaid.min.js"></script>
+<link rel="stylesheet" href="styles.css">
+<script src="app.js" defer></script>
+</head>
+<body>
+<div class="app">
+  <div class="header-row">
+    <h1>🟣 AI Mermaid 다이어그램 생성기</h1>
+    <button class="theme-btn" id="themeBtn" onclick="toggleTheme()" title="테마 전환">🌙</button>
+  </div>
+  <p class="subtitle">텍스트를 입력하면 AI가 분석하여 시각화해드립니다</p>
+
+  <div class="card" id="apiKeyCard">
+    <div class="section-title">🔑 API KEY 입력</div>
+    <div class="provider-btns">
+      <button class="provider-btn active" id="providerClaude" onclick="selectProvider('claude')">● Claude (Anthropic)</button>
+      <button class="provider-btn" id="providerOpenai" onclick="selectProvider('openai')">● OpenAI</button>
+    </div>
+    <div id="openaiModelRow" class="openai-model-row">
+      <label class="openai-model-label">OpenAI 모델 선택</label>
+      <select id="openaiModelSelect" class="openai-model-select">
+        <option value="gpt-4o-mini">gpt-4o-mini — 표준형 · 안정적</option>
+        <option value="gpt-4o">gpt-4o — 고성능 · 최신 엔진</option>
+      </select>
+    </div>
+    <div class="api-input-row">
+      <input type="password" id="apiKeyInput" class="api-key-input"
+        placeholder="Anthropic API Key를 입력하세요 (sk-ant-...)"
+        oninput="onApiKeyChange()" onkeydown="if(event.key==='Enter')saveApiKey()">
+      <button onclick="saveApiKey()" id="apiKeySaveBtn" class="api-key-save-btn" disabled>
+        저장
+      </button>
+    </div>
+    <label class="save-local-row">
+      <input type="checkbox" id="saveLocalCheck" onchange="onSaveLocalToggle()">
+      브라우저에 API Key 저장
+    </label>
+    <div id="apiKeyStatus" class="api-key-status">API Key는 브라우저 메모리에만 저장되며 외부로 전송되지 않습니다.</div>
+  </div>
+
+  <div class="card hidden" id="inputCard">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <div class="section-title" style="margin-bottom:0;">① 내용 입력</div>
+      <div class="detail-toggle">
+        <span class="detail-label">상세도:</span>
+        <button id="detailLow" onclick="setDetailLevel('low')" class="detail-btn active">🐣 요약</button>
+        <button id="detailHigh" onclick="setDetailLevel('high')" class="detail-btn">🧠 상세</button>
+      </div>
+    </div>
+    <textarea id="inputText" placeholder="분석할 내용을 자유롭게 입력하세요..."></textarea>
+    <button class="analyze-btn" id="analyzeBtn" onclick="analyzeText()">● AI 분석하기</button>
+    <div id="analyzeError" class="error hidden"></div>
+  </div>
+
+  <div class="card hidden" id="typeSection">
+    <div class="section-title">② 시각화 유형 선택 <span class="type-section-note">(최대 3개)</span></div>
+    <div class="diagram-grid" id="diagramGrid"></div>
+    <div class="select-hint" id="selectHint">유형을 선택하세요 — <span>0 / 3</span> 선택됨</div>
+    <button class="generate-btn generate-btn-spaced" id="generateBtn" onclick="generateDiagram()" disabled>
+      ✨ 다이어그램 생성하기
+    </button>
+    <div id="generateError" class="error hidden"></div>
+  </div>
+
+  <div class="card hidden" id="outputSection">
+    <div class="section-title">③ 결과</div>
+    <div id="resultsContainer"></div>
+    <button class="analyze-btn reset-btn" onclick="resetAll()">🔄 처음부터 다시</button>
+  </div>
+
+  <div id="statusMsg" class="status hidden"></div>
+</div>
+
+<div class="fs-modal hidden" id="fsModal">
+  <div class="fs-backdrop" onclick="closeFullscreen()"></div>
+  <div class="fs-content">
+    <div class="fs-header">
+      <span class="fs-title" id="fsTitle"></span>
+      <div class="fs-toolbar">
+        <div class="zoom-controls">
+          <button class="zoom-btn" onclick="zoomOut('__fs__')">−</button>
+          <span class="zoom-level" id="zoomLevel___fs__">100%</span>
+          <button class="zoom-btn" onclick="zoomIn('__fs__')">+</button>
+          <button class="zoom-btn" onclick="zoomReset('__fs__')" title="원래 크기">↺</button>
+          <button class="zoom-btn" onclick="zoomFit('__fs__')" title="너비 맞춤">↔ 맞춤</button>
+        </div>
+        <button class="fs-close" onclick="closeFullscreen()">✕ 닫기</button>
+      </div>
+    </div>
+    <div class="fs-diagram" id="fsDiagram">
+      <div class="zoom-wrap" id="zoomWrap___fs__"></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

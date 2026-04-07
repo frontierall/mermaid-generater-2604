@@ -1,0 +1,23 @@
+╭─── Claude Code v2.1.92 ──────────────────────────────────────────────────────╮
+│                                                    │ Tips for getting        │
+│               Welcome back daniel_wj!              │ started                 │
+│                                                    │ Run /init to create a … │
+│                       ▐▛███▜▌                      │ ─────────────────────── │
+│                      ▝▜█████▛▘                     │ Recent activity         │
+│                        ▘▘ ▝▝                       │ No recent activity      │
+│                                                    │                         │
+│        Sonnet 4.6 · Claude Pro · daniel_wj         │                         │
+│  /mnt/d/Github_Frontierall/mermaid-generater-2604  │                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+✻ Conversation compacted (ctrl+o for history)
+
+  ⎿  Referenced file app.js
+  ⎿  Read index.html (103 lines)
+  ⎿  Referenced file styles.css
+  ⎿  Referenced file ../Notion_Mermaid_2604/app.js
+  ⎿  Read ../Notion_Mermaid_2604/index.html (103 lines)
+  ⎿  You've hit your limit · resets 9pm (Asia/Seoul)
+     /upgrade or /extra-usage to finish what you’re working on.
+
+✻ Sautéed for 1m 50s
